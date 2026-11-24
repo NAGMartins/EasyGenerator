@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>48 horas contam</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #000032;
+    color: #fff;
+    font: 17px/1.5 Arial, sans-serif;
+  }
+
+  main { max-width: 760px; margin: auto; }
+
+  .marca {
+    color: #cdff40;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+
+  h1 {
+    margin: 12px 0 20px;
+    font-size: clamp(30px, 6vw, 44px);
+    line-height: 1.15;
+  }
+
+  .cenario {
+    border-left: 4px solid #cdff40;
+    padding-left: 18px;
+  }
+
+  .instrucao { color: #d7d7e8; }
+
+  ol {
+    padding: 0;
+    list-style: none;
+    counter-reset: passos;
+  }
+
+  li {
+    counter-increment: passos;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border: 1px solid #70708f;
+    border-radius: 12px;
+    background: #141448;
+  }
+
+  li::before {
+    content: counter(passos);
+    flex: 0 0 32px;
+    text-align: center;
+    color: #cdff40;
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  .texto { flex: 1; }
+
+  .controlos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  button {
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: #cdff40;
+    color: #000032;
+    font: bold 16px Arial, sans-serif;
+    cursor: pointer;
+  }
+
+  .controlos button {
+    background: #fff;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  button:disabled { opacity: .4; cursor: default; }
+
+  button:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 4px;
+  }
+
+  .controlos button:focus-visible {
+    outline-color: #cdff40;
+  }
+
+  .acoes { display: flex; flex-wrap: wrap; gap: 12px; }
+
+  .secundario {
+    background: transparent;
+    color: #fff;
+    border: 1px solid #9191ab;
+  }
+
+  #feedback {
+    margin-top: 20px;
+    border-radius: 10px;
+  }
+
+  #feedback:not(:empty) { padding: 18px; }
+
+  .correto { background: #cdff40; color: #000032; }
+  .incorreto { background: #fff; color: #000032; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    li { gap: 10px; padding: 12px; flex-wrap: wrap; }
+    .texto { flex-basis: calc(100% - 44px); }
+    .controlos {
+      width: 100%;
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+  }
+</style>
+</head>
+
+<body>
+<main>
+  <div class="marca">MEO PROTEGE</div>
+  <h1>48 horas contam</h1>
+
+  <p class="cenario">
+    O cliente descobriu hoje uma fraude em compra online.
+    Ordena as ações essenciais.
+  </p>
+
+  <p class="instrucao">
+    Usa os botões Subir e Descer. Quando terminares,
+    seleciona “Verificar resposta”.
+  </p>
+
+  <!-- Ordem inicial fixa. Não existe baralhamento automático. -->
+  <ol id="passos" aria-label="Ações por ordem de realização">
+    <li data-ordem="3">
+      <span class="texto">Contactar a Chubb rapidamente</span>
+    </li>
+    <li data-ordem="1">
+      <span class="texto">
+        Comunicar à polícia e ao banco/prestador em 48 h
+      </span>
+    </li>
+    <li data-ordem="4">
+      <span class="texto">Indicar apólice e enviar o solicitado</span>
+    </li>
+    <li data-ordem="2">
+      <span class="texto">Reunir provas</span>
+    </li>
+  </ol>
+
+  <div class="acoes">
+    <button id="verificar" type="button">Verificar resposta</button>
+    <button id="repor" class="secundario" type="button">Recomeçar</button>
+  </div>
+
+  <div id="feedback" role="status" aria-live="polite"></div>
+
+  <noscript>
+    Este exercício precisa de JavaScript para permitir a ordenação.
+  </noscript>
+</main>
+
+<script>
+  const lista = document.getElementById("passos");
+  const feedback = document.getElementById("feedback");
+  const ordemInicial = Array.from(lista.children);
+
+  ordemInicial.forEach(item => {
+    const controlos = document.createElement("div");
+    controlos.className = "controlos";
+
+    ["Subir", "Descer"].forEach((acao, indice) => {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.textContent = acao;
+      botao.dataset.movimento = indice === 0 ? "-1" : "1";
+      botao.setAttribute(
+        "aria-label",
+        acao + ": " + item.querySelector(".texto").textContent.trim()
+      );
+      controlos.append(botao);
+    });
+
+    item.append(controlos);
+  });
+
+  function atualizarBotoes() {
+    Array.from(lista.children).forEach((item, indice, itens) => {
+      item.querySelector('[data-movimento="-1"]').disabled =
+        indice === 0;
+
+      item.querySelector('[data-movimento="1"]').disabled =
+        indice === itens.length - 1;
+    });
+  }
+
+  function limparFeedback() {
+    feedback.textContent = "";
+    feedback.className = "";
+  }
+
+  lista.addEventListener("click", evento => {
+    const botao = evento.target.closest("button[data-movimento]");
+    if (!botao || botao.disabled) return;
+
+    const item = botao.closest("li");
+    const subir = botao.dataset.movimento === "-1";
+    const vizinho = subir
+      ? item.previousElementSibling
+      : item.nextElementSibling;
+
+    if (!vizinho) return;
+
+    if (subir) {
+      lista.insertBefore(item, vizinho);
+    } else {
+      lista.insertBefore(vizinho, item);
+    }
+
+    atualizarBotoes();
+    limparFeedback();
+
+    const foco = botao.disabled
+      ? item.querySelector("button:not(:disabled)")
+      : botao;
+
+    foco.focus();
+  });
+
+  document.getElementById("verificar").addEventListener("click", () => {
+    const correta = Array.from(lista.children).every(
+      (item, indice) => Number(item.dataset.ordem) === indice + 1
+    );
+
+    feedback.className = correta ? "correto" : "incorreto";
+
+    feedback.textContent = correta
+      ? "Correto! Comunica à polícia e ao banco/prestador nas " +
+        "48 horas após a descoberta. Reúne provas, contacta a Chubb " +
+        "rapidamente e indica a apólice, enviando a informação solicitada."
+      : "Ainda não está correto. Revê a sequência: começa pela ação " +
+        "com o prazo de 48 horas, seguida da recolha de provas. " +
+        "Ajusta a ordem e tenta novamente.";
+  });
+
+  document.getElementById("repor").addEventListener("click", () => {
+    lista.replaceChildren(...ordemInicial);
+    atualizarBotoes();
+    limparFeedback();
+    lista.querySelector("button:not(:disabled)").focus();
+  });
+
+  atualizarBotoes();
+</script>
+</body>
+</html>
+No Easygenerator: em Embed → HTML, cola o seguinte e substitui ENDERECO_HTTPS_DO_EXERCICIO pelo endereço da página publicada:
+<iframe
+  src="ENDERECO_HTTPS_DO_EXERCICIO"
+  title="Exercício de ordenação: 48 horas contam"
+  width="100%"
+  height="950"
+  style="border:0;"
+  loading="lazy">
+</iframe>
